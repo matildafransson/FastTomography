@@ -1,4 +1,4 @@
-CT Reconstruction:
+**CT Reconstruction:**
 
 Fast tomography of battery failure is performed using a specialized synchrotron-adapted setup. 
 The incorporated rotation stage and the high-speed detector that enables fast CT, are not directly linked. 
@@ -31,17 +31,17 @@ then reconstructs using the FBP-reconstruction algorithm incorporated in Nabu. P
 is applied in the reconstruction step to increase the image quality.
 
 
-Data Rotation:
+**Data Rotation:**
 
 To ensure that all batteries have the same orientation, the volumes have been automatically rotated 
 based on a feature location, and afterwards saved as .npy files for easier post-processing. 
 
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval' or 'Tracking of Metal Agglomerat Segmentation'. 
 
-Metal Agglomerate Segmentation: 
+**Metal Agglomerate Segmentation:** 
 Code for this has been developed by Matteo Venturelli and can be found in this Git repository: 
 
-Speed-Retieval: 
+**Speed-Retieval:** 
 
 '![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
