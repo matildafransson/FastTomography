@@ -47,11 +47,24 @@ Code for this has been developed by Matteo Venturelli and can be found in this G
 
 '![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
+
 **A. Reslicing**
 
-In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced for every degree from 0-180. See step A in the figure. 
+In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced
+for every degree from 0-180. See step A in the figure. 
+
+In the code please define: 
+
+output_path = the directory whwre the resliced tiff images should be stored
+
+path_volume_list = list of paths to the .npy files
+
+list_start_t_number = list of numbers, indicating which volume to start the reslicing on (related to the list path_volume_list) 
+
 
 **B. Registration**
+
+
 
 **C+D. Speed Mapping and Plotting**
 
