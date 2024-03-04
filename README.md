@@ -39,12 +39,12 @@ Speed-Retieval:
 
 '![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
-1. Reslicing
+A. Reslicing
 In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced for every degree from 0-180. See step A in the figure. 
 
-2. Registration
+B. Registration
 
-3. Speed Mapping and Plotting
+C+D. Speed Mapping and Plotting
 
 
  
