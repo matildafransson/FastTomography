@@ -52,7 +52,7 @@ https://github.com/venturellimatteo/fasttomo
 **A. Reslicing**
 
 In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced
-for every degree from 0-180. See step A in the figure. 
+for every degree from 0-180. See step A in the figure above. 
 
 In the code please define: 
 
