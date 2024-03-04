@@ -2,7 +2,7 @@ import glob
 import numpy as np 
 import os
 import time 
-from sbash_Nx_creation import NxGenerator
+from Nxcreation import NxGenerator
 
 def cutAngleFile(path_angle, flag360):
 	"""
@@ -74,22 +74,22 @@ def cutAngleFile(path_angle, flag360):
 if __name__ == '__main__':
 
 	# Define main folder and other parameters
-	main_folder = '/data/projects/whaitiri/Data/JULY_2022/*'
-	path_dark = main_folder+'TESTS/FT_test1/darks/'
-	path_ref =  main_folder+'VCT5_FT_N_Exp3'+'/'+'VCT5_FT_N_Exp3_Ref/'
+	main_folder = '/data/projects/whaitiri/Data/JULY_2022/*' #main folder where data is located
+	path_dark = main_folder+'TESTS/FT_test1/darks/' #folder where darks are located
+	path_ref =  main_folder+'VCT5_FT_N_Exp3'+'/'+'VCT5_FT_N_Exp3_Ref/' #folder where references are located
 
 	flag360 = False
-	pixel_size = 40e-6
+	pixel_size = 40e-6 #Give the pixel size
 
-	energy = 75.0
-	distance = 10.0
+	energy = 75.0 #Give the X-ray energy (keV)
+	distance = 10.0 #Give the detector distance (m)
 
 	list_FT = [] 
 	list_folders = glob.glob(main_folder)
 	list_folder = []
 	# Get list of X-ray folders
 	for i, folder in enumerate(list_folders):
-		if ('VCT5_FT_N_Exp2' in folder) and not('.txt' in folder): #and not ('LiS' in folder) and not ('SSB' in folder) and not ('xlsx' in folder) and not ('VCT5A_FT_H_Exp4') and not ('VCT5A_FT_H_Exp1')and not ('VCT5A_FT_N_Exp4') and not ('VCT5A_FT_N_Exp3')  and not ('VCT5A_FT_N_Exp1')  and not ('P28B_ISC_FT_H_Exp4_2') and not ('P28B_ISC_FT_H_Exp5') and not ('P28A_FT_N_Exp4') and not ('P28A_FT_H_Exp5_2') and not ('P28A_FT_H_Exp5') and not ('P28A_FT_H_Exp4_2') and not ('P28A_FT_H_Exp3') and not ('P28A_FT_H_Exp1'):
+		if ('VCT5_FT_N_Exp2' in folder) and not('.txt' in folder): #To select specific experiments to be processed
 			list_folder.append(folder)
 	list_folder.sort()
 
