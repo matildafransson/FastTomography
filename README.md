@@ -11,11 +11,17 @@ the projections (.tiff files). Codes for this part are found in the folder Recon
 In the Reconstruction main.py, please provide:
 
 main_folder = the main folder to data. Later on, it is possible to loop through several experiments or select specific experiments to be processed, therefore provide only the main path here.
+
 path_dark = path to where the dark images are located 
+
 path_ref = path to where the reference images are located 
+
 flag360 = True for reconstruction every 360 degrees, and False for reconstruction each 180 degrees. 
+
 pixel_size = Give the pixel size in [m]
+
 energy = Give the X-ray energy in [keV]
+
 distance = Give the sample/detector distance in [m]
 
 In the following step, CT reconstruction is done from the .nx file using the ESRF-developed software 
