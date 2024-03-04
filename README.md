@@ -16,7 +16,7 @@ path_dark = path to where the dark images are located
 
 path_ref = path to where the reference images are located 
 
-flag360 = True for reconstruction every 360 degrees, and False for reconstruction each 180 degrees. 
+flag360 = True for reconstruction every 360 degrees, and False for reconstruction every 180 degrees. 
 
 pixel_size = Give the pixel size in [m]
 
