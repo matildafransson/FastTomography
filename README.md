@@ -37,7 +37,7 @@ Code for this has been developed by Matteo Venturelli and can be found in this G
 
 Speed-Retieval: 
 
-'![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/Speed_figure.png?raw=true)'
+'![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
 1. Reslicing
 In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced for every degree from 0-180. See step A in the figure. 
