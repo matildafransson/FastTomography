@@ -37,7 +37,7 @@ To ensure that all batteries have the same orientation, the volumes have been au
 based on a feature location, and afterwards saved as .npy files for easier post-processing. 
 
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
-or 'Tracking of Metal Agglomerat Segmentation'. 
+or 'Tracking of Metal Agglomerate Segmentation'. 
 
 <u>**Metal Agglomerate Segmentation:**</u>
 
