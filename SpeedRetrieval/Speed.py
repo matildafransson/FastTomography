@@ -387,10 +387,10 @@ class VectorAnalysis():
 # Comment
 if __name__ == '__main__':
 
-    path = 'W:\\Data\\Data_Processing_July2022\\Displacement_arrays\\'
-    path_save_fig = 'W:\\Data\\Data_Processing_July2022\\SpeedFigures\\'
-    time_steps = 6
-    angle_step = 15
+    path = #Insert data path
+    path_save_fig = # Insert path where to save images
+    time_steps = #Select the number of time steps you want to consider while computing the averages
+    angle_step = #select the angular interval for the computation
     list_experiments = []
     save_path_list = []
     for experiment in os.listdir(path):
