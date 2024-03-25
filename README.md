@@ -32,19 +32,37 @@ then reconstructs using the FBP-reconstruction algorithm incorporated in Nabu. P
 is applied in the reconstruction step to increase the image quality.
 
 
+
+
+
 <u>**Data Rotation:**</u>
 (see Rotation folder)
 
 To ensure that all batteries have the same orientation, the volumes have been automatically rotated 
 based on a feature location, and afterwards saved as .npy files for easier post-processing. 
 
+path = full path to the main folder with reconstructions
+
+out_path =  path to the main folder where rotataed data should be saved 
+
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
 or 'Tracking of Metal Agglomerate Segmentation'. 
+
+
+
+
 
 <u>**Metal Agglomerate Segmentation:**</u>
 
 Code for this has been developed by Matteo Venturelli and can be found in this Git repository: 
 https://github.com/venturellimatteo/fasttomo
+
+Takes th rotated .npy files as input
+
+
+
+
+
 
 <u>**Speed-Retieval:**</u> 
 
@@ -66,8 +84,18 @@ path_volume_list = list of paths to the .npy files
 list_start_t_number = list of numbers, indicating which volume to start the reslicing on (related to the list path_volume_list) 
 
 
+
+
+
+
+
 **B. Registration**
 (see Registration folder)
+
+
+
+
+
 
 
 
