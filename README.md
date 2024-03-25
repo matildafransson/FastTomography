@@ -29,7 +29,7 @@ In the following step, CT reconstruction is done from the .nx file using the ESR
 (find documentation here: (https://gitlab.esrf.fr/tomotools/nabu) to obtain the 3D volumes. 
 This algorithm pre-processes the projections through normalization using flat and dark-field images,
 then reconstructs using the FBP-reconstruction algorithm incorporated in Nabu. Paganing filtering 
-is applied in the reconstruction step to increase the image quality.
+is applied in the reconstruction step to increase the image quality. <br><br><br><br>
 
 
 
@@ -46,7 +46,7 @@ path = full path to the main folder with reconstructions
 out_path =  path to the main folder where rotataed data should be saved 
 
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
-or 'Tracking of Metal Agglomerate Segmentation'. 
+or 'Tracking of Metal Agglomerate Segmentation'. <br><br><br><br>
 
 
 
@@ -57,7 +57,7 @@ or 'Tracking of Metal Agglomerate Segmentation'.
 Code for this has been developed by Matteo Venturelli and can be found in this Git repository: 
 https://github.com/venturellimatteo/fasttomo
 
-Takes th rotated .npy files as input
+Takes th rotated .npy files as input.<br><br><br><br>
 
 
 
@@ -68,7 +68,7 @@ Takes th rotated .npy files as input
 
 '![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
-
+<br><br><br><br>
 **A. Reslicing**
 (see Reslicing folder)
 
@@ -83,7 +83,7 @@ path_volume_list = list of paths to the .npy files
 
 list_start_t_number = list of numbers, indicating which volume to start the reslicing on (related to the list path_volume_list) 
 
-
+<br><br><br><br>
 
 
 
