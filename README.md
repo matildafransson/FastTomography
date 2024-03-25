@@ -51,9 +51,7 @@ threshold = threshold for feature segmentation
 
 seedListtoSegement = seed list give a point to start the region growing segmentation of the battery
 
-sixe_median_filter = size of median filter kernel
-
-<br><br>
+sixe_median_filter = size of median filter kernel<br><br>
 
 Processing of reconstructed and rotated data is thereafter followed by <u>**'Speed Retrieval'<u>**
 or <u>**'Tracking of Metal Agglomerate Segmentation'<u>**. <br><br>
