@@ -1,4 +1,5 @@
 <u>**CT Reconstruction:**</u>
+(see Reconstruction folder)
 
 Fast tomography of battery failure is performed using a specialized synchrotron-adapted setup. 
 The incorporated rotation stage and the high-speed detector that enables fast CT, are not directly linked. 
@@ -32,6 +33,7 @@ is applied in the reconstruction step to increase the image quality.
 
 
 <u>**Data Rotation:**</u>
+(see Rotation folder)
 
 To ensure that all batteries have the same orientation, the volumes have been automatically rotated 
 based on a feature location, and afterwards saved as .npy files for easier post-processing. 
@@ -50,6 +52,7 @@ https://github.com/venturellimatteo/fasttomo
 
 
 **A. Reslicing**
+(see Reslicing folder)
 
 In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced
 for every degree from 0-180. See step A in the figure above. 
@@ -64,10 +67,12 @@ list_start_t_number = list of numbers, indicating which volume to start the resl
 
 
 **B. Registration**
+(see Registration folder)
 
 
 
 **C+D. Speed Mapping and Plotting**
+(see Speed folder)
 
 
  
