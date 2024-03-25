@@ -1,4 +1,5 @@
 <u>**CT Reconstruction:**</u>
+(see Reconstruction folder)
 
 Fast tomography of battery failure is performed using a specialized synchrotron-adapted setup. 
 The incorporated rotation stage and the high-speed detector that enables fast CT, are not directly linked. 
@@ -28,28 +29,34 @@ In the following step, CT reconstruction is done from the .nx file using the ESR
 (find documentation here: (https://gitlab.esrf.fr/tomotools/nabu) to obtain the 3D volumes. 
 This algorithm pre-processes the projections through normalization using flat and dark-field images,
 then reconstructs using the FBP-reconstruction algorithm incorporated in Nabu. Paganing filtering 
-is applied in the reconstruction step to increase the image quality.
-
+is applied in the reconstruction step to increase the image quality. <br><br><br><br>
 
 <u>**Data Rotation:**</u>
+(see Rotation folder)
 
 To ensure that all batteries have the same orientation, the volumes have been automatically rotated 
 based on a feature location, and afterwards saved as .npy files for easier post-processing. 
 
+path = full path to the main folder with reconstructions
+
+out_path =  path to the main folder where rotataed data should be saved 
+
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
-or 'Tracking of Metal Agglomerate Segmentation'. 
+or 'Tracking of Metal Agglomerate Segmentation'. <br><br><br><br>
 
 <u>**Metal Agglomerate Segmentation:**</u>
 
 Code for this has been developed by Matteo Venturelli and can be found in this Git repository: 
 https://github.com/venturellimatteo/fasttomo
 
+Takes th rotated .npy files as input.<br><br><br><br>
+
 <u>**Speed-Retieval:**</u> 
 
 '![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
-
 **A. Reslicing**
+(see Reslicing folder)
 
 In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced
 for every degree from 0-180. See step A in the figure above. 
@@ -62,14 +69,14 @@ path_volume_list = list of paths to the .npy files
 
 list_start_t_number = list of numbers, indicating which volume to start the reslicing on (related to the list path_volume_list) 
 
+<br><br><br><br>
 
 **B. Registration**
-
+(see Registration folder)
+<br><br><br><br>
 
 
 **C+D. Speed Mapping and Plotting**
-
-
- 
+(see Speed folder)
 
 Resliced datasets from two subsequent time steps at the same angular positions are thereafter considered in pairs for the registration process, see step B in the figure.
