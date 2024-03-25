@@ -41,6 +41,20 @@ path = full path to the main folder with reconstructions
 
 out_path =  path to the main folder where rotataed data should be saved 
 
+center = guess for the center fo the frame 
+
+seg_min_r = minimum threshold value for segmentation
+
+seg_max_r = maximum threshold value for segmentation
+
+threshold = threshold for feature segmentation
+
+seedListtoSegement = seed list give a point to start the region growing segmentation of the battery
+
+sixe_median_filter = size of median filter kernel
+
+<br><br>
+
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
 or 'Tracking of Metal Agglomerate Segmentation'. <br><br><br><br>
 
@@ -61,22 +75,33 @@ Takes th rotated .npy files as input.<br><br><br><br>
 In a primary step to achieve faster processing of large 3D datasets, the CT volume is horizontally resliced
 for every degree from 0-180. See step A in the figure above. 
 
-In the code please define: 
+In the function 'run' please define: 
 
-output_path = the directory whwre the resliced tiff images should be stored
+output_path = the directory where the resliced tiff images should be stored
 
 path_volume_list = list of paths to the .npy files
 
 list_start_t_number = list of numbers, indicating which volume to start the reslicing on (related to the list path_volume_list) 
-
 <br><br><br><br>
 
 **B. Registration**
 (see Registration folder)
+
+directory = path to the folder with resliced images 
+out_directory = path to where the copmuted displacement arrays should be saved 
+
+In the function registration, there are several parameters of the registration that could eb modified for optimization. 
+
 <br><br><br><br>
-
-
 **C+D. Speed Mapping and Plotting**
 (see Speed folder)
+
+path = path to whwre the displacement arry is located
+
+path_save_fig = path to where images should be saved
+
+time_steps = select the number of time steps you want to consider while computing the averages
+
+angle_step = select the angular interval for the computation
 
 Resliced datasets from two subsequent time steps at the same angular positions are thereafter considered in pairs for the registration process, see step B in the figure.
