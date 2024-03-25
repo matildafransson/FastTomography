@@ -68,7 +68,6 @@ Takes th rotated .npy files as input.<br><br><br><br>
 
 '![Figure 1: Process of speed retrieval from fast tomography data](https://github.com/matildafransson/FastTomography/blob/master/FINAL_SPEED_FIG.png?raw=true)'
 
-<br><br><br><br>
 **A. Reslicing**
 (see Reslicing folder)
 
