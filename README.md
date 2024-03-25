@@ -31,10 +31,6 @@ This algorithm pre-processes the projections through normalization using flat an
 then reconstructs using the FBP-reconstruction algorithm incorporated in Nabu. Paganing filtering 
 is applied in the reconstruction step to increase the image quality. <br><br><br><br>
 
-
-
-
-
 <u>**Data Rotation:**</u>
 (see Rotation folder)
 
@@ -48,21 +44,12 @@ out_path =  path to the main folder where rotataed data should be saved
 Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
 or 'Tracking of Metal Agglomerate Segmentation'. <br><br><br><br>
 
-
-
-
-
 <u>**Metal Agglomerate Segmentation:**</u>
 
 Code for this has been developed by Matteo Venturelli and can be found in this Git repository: 
 https://github.com/venturellimatteo/fasttomo
 
 Takes th rotated .npy files as input.<br><br><br><br>
-
-
-
-
-
 
 <u>**Speed-Retieval:**</u> 
 
@@ -84,24 +71,12 @@ list_start_t_number = list of numbers, indicating which volume to start the resl
 
 <br><br><br><br>
 
-
-
-
-
 **B. Registration**
 (see Registration folder)
-
-
-
-
-
-
+<br><br><br><br>
 
 
 **C+D. Speed Mapping and Plotting**
 (see Speed folder)
-
-
- 
 
 Resliced datasets from two subsequent time steps at the same angular positions are thereafter considered in pairs for the registration process, see step B in the figure.
