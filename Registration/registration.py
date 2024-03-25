@@ -63,11 +63,9 @@ class ImageRegistration:
                     yMaxRef = SizeYVol - 1
 
                 if ((itery + iterx) % 2) == 0:
-                    chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im1[xMinRef:xMaxRef,
-                                                                 yMinRef:yMaxRef]
+                    chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im1[xMinRef:xMaxRef, yMinRef:yMaxRef]
                 else:
-                    chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im2[xMinRef:xMaxRef,
-                                                                 yMinRef:yMaxRef]
+                    chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im2[xMinRef:xMaxRef, yMinRef:yMaxRef]
 
         return chessMap
 
@@ -114,7 +112,70 @@ class ImageRegistration:
         fixed = sitk.ReadImage(fixed_image, sitk.sitkFloat32)
         moving = sitk.ReadImage(moving_image, sitk.sitkFloat32)
 
-        # Additional registration code here
+        median_fixed = np.median(sitk.GetArrayFromImage(fixed))
+        median_moving = np.median(sitk.GetArrayFromImage(moving))
+        background_fixed = np.median(sitk.GetArrayFromImage(fixed)[0:20, 0:20])
+        background_moving = np.median(sitk.GetArrayFromImage(moving)[0:20, 0:20])
+        slope_fixed = 20000 / (median_fixed - background_fixed)
+        slope_moving = 20000 / (median_moving - background_moving)
+
+        intersect_fixed = 30000 - slope_fixed * median_fixed
+        intersect_moving = 30000 - slope_moving * median_moving
+
+        fixed = fixed * slope_fixed + intersect_fixed
+        moving = moving * slope_moving + intersect_moving
+
+        threshold_filter = sitk.ThresholdImageFilter()
+        threshold_filter.SetLower(18000)
+        threshold_filter.SetUpper(100000000)
+        mask_fixed = threshold_filter.Execute(fixed)
+        mask_moving = threshold_filter.Execute(moving)
+
+        # Registration initiation
+        registration = sitk.ImageRegistrationMethod()
+        registration.SetMetricFixedMask(mask_fixed)
+        registration.SetMetricMovingMask(mask_moving)
+        # Choice of metric - will quantify similarity, find the min using this method through the optimizer
+        registration.SetMetricAsMeanSquares()
+        registration.SetMetricUseMovingImageGradientFilter(True)
+        registration.SetMetricUseFixedImageGradientFilter(True)
+        registration.SetMetricSamplingStrategy(registration.RANDOM)
+        registration.SetMetricSamplingPercentage(0.01)
+        # Select the interpolator - Bspline in this case to perform it elastcially
+        registration.SetInterpolator(sitk.sitkBSpline)
+
+        # Define the grid spacing
+        x_grid_size = 60
+        y_grid_size = 60
+        grid_physical_spacing = [x_grid_size, y_grid_size]
+        image_physical_size = [size * spacing for size, spacing in zip(fixed.GetSize(), fixed.GetSpacing())]
+        print(image_physical_size)
+        mesh_size = [int(image_size / grid_spacing + 0.5) for image_size, grid_spacing in
+                     zip(image_physical_size, grid_physical_spacing)]
+        mesh_size = [20, 20]
+        # Give an initial transform
+        transform = sitk.BSplineTransformInitializer(image1=fixed, transformDomainMeshSize=mesh_size, order=3)
+        # Set the initial transform
+        registration.SetInitialTransform(transform)
+        # Set the optimization method
+        # registration.SetOptimizerAsLBFGSB(gradientConvergenceTolerance=1e-6, numberOfIterations=300)
+        registration.SetOptimizerAsGradientDescent(learningRate=0.00001, numberOfIterations=300,
+                                                   convergenceMinimumValue=1e-8, convergenceWindowSize=10)
+        registration.SetShrinkFactorsPerLevel([4, 2, 1])
+        registration.SetSmoothingSigmasPerLevel([1, 1, 1])
+        registration.AddCommand(sitk.sitkIterationEvent, lambda: self.command_iteration(registration, transform))
+        # registration.AddCommand(sitk.sitkMultiResolutionIterationEvent,lambda: command_multi_iteration(registration))
+        # Execute the registration
+        final_transform = registration.Execute(fixed, moving)
+
+        # Get the displacement field from the final transform
+        displacement_filter = sitk.TransformToDisplacementFieldFilter()
+        displacement_filter.SetReferenceImage(fixed)
+        vectorField = displacement_filter.Execute(final_transform)
+        filterJacob = sitk.DisplacementFieldJacobianDeterminantFilter()
+        deformation_map = filterJacob.Execute(vectorField)
+        # displacement_field = sitk.TransformToDisplacementField(final_transform, sitk.sitkVectorFloat64)
+        print(vectorField)
 
         return fixed, moving, vectorField, final_transform, deformation_map
 
@@ -150,28 +211,51 @@ if __name__ == '__main__':
             list_t_entry_crop = list_t_entry[::2]
             len_list = len(list_t_entry_crop)
 
-            for i in range(0,len_list,1):
-                if i < len_list-1:
+            for i in range(0, len_list, 1):
+                if i < len_list - 1:
                     entry1 = list_t_entry_crop[i]
                     name_1 = entry1.split('\\')[-1]
                     name_1 = name_1.split('_')[0]
-                    entry2 = list_t_entry_crop[i+1]
+                    entry2 = list_t_entry_crop[i + 1]
                     name_2 = entry2.split('\\')[-1]
                     name_2 = name_2.split('_')[0]
                     list_t1_angle = []
                     list_t2_angle = []
-                    for t1_angle, t2_angle in zip(os.listdir(entry1),os.listdir(entry2)):
+                    for t1_angle, t2_angle in zip(os.listdir(entry1), os.listdir(entry2)):
                         t1_angle_path = entry1 + '\\' + t1_angle
                         t2_angle_path = entry2 + '\\' + t2_angle
                         list_t1_angle.append(t1_angle_path)
                         list_t2_angle.append(t2_angle_path)
                     sorted_t1 = registration_obj.natural_sort(list_t1_angle)
                     sorted_t2 = registration_obj.natural_sort(list_t2_angle)
-                    for tiff1, tiff2 in zip(sorted_t1,sorted_t2):
-
+                    for tiff1, tiff2 in zip(sorted_t1, sorted_t2):
                         path_im_1 = tiff1
                         tiff_name_1 = path_im_1.split('\\')[-1]
                         tiff_name_1 = tiff_name_1.split('.')[0]
                         path_im_2 = tiff2
                         tiff_name_2 = path_im_2.split('\\')[-1]
                         tiff_name_2 = tiff_name_2.split('.')[0]
+
+                        fixed, moving, vectorField, final_transform, deformation_map = registration_obj.registration(
+                            path_im_1, path_im_2)
+
+                        vector_array = (sitk.GetArrayFromImage(vectorField))
+                        print('--------------------')
+                        print(vector_array)
+                        save_vector_path = vector_path + '\\' + str(name_1) + '_' + str(name_2) + '_' + str(
+                            tiff_name_1) + '_' + str(tiff_name_2) + '.npy'
+                        print(save_vector_path)
+
+                        tranformation_array = (final_transform)
+                        save_transformartion_path = transform_path + '\\' + str(name_1) + '_' + str(
+                            name_2) + '_' + str(tiff_name_1) + '_' + str(tiff_name_2) + '.npy'
+                        print(tranformation_array)
+
+                        deformation_array = (sitk.GetArrayFromImage(deformation_map))
+                        print(deformation_array)
+                        save_deformation_path = deformation_path + '\\' + str(name_1) + '_' + str(
+                            name_2) + '_' + str(tiff_name_1) + '_' + str(tiff_name_2) + '.npy'
+
+                        np.save(save_vector_path, vector_array)
+                        np.save(save_transformartion_path, tranformation_array)
+                        np.save(save_deformation_path, deformation_array)
