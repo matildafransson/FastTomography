@@ -7,11 +7,10 @@ import fabio.tifimage as tif
 import SimpleITK as sitk
 
 class Volume_Rotator():
-    def __init__(self, image, center, max_r, threshold, seg_min_value, seg_max_value, seedListToSegment,size_median_filter):
+    def __init__(self, image, center, threshold, seg_min_value, seg_max_value, seedListToSegment,size_median_filter):
 
         self.image = image
         self.center = center
-        self.max_r = max_r
         self.threshold = threshold
         self.seg_min_value = seg_min_value
         self.seg_max_value = seg_max_value
@@ -228,7 +227,6 @@ if __name__ == '__main__':
     path = 'W:\\Data\\Data_Processing_July2022\\Reconstructions\\'
     out_path = 'W:\\Data\\Data_Processing_July2022\\rot_datasets\\'
     center = (353, 348) # center of the frame
-    max_r = 0.65 #
     seg_min_value = 0.3 #minimum threshold value for segmentation
     seg_max_value = 20 #maximum threshold value for segmentation
     threshold = 0.32 #threshold for feature segmentation
