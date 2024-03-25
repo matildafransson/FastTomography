@@ -53,10 +53,10 @@ seedListtoSegement = seed list give a point to start the region growing segmenta
 
 sixe_median_filter = size of median filter kernel
 
-<br>
+<br><br>
 
-Processing of reconstructed and rotated data is thereafter followed by 'Speed Retrieval'
-or 'Tracking of Metal Agglomerate Segmentation'. <br>
+Processing of reconstructed and rotated data is thereafter followed by <u>**'Speed Retrieval'<u>**
+or <u>**'Tracking of Metal Agglomerate Segmentation'<u>**. <br><br>
 
 <u>**Metal Agglomerate Segmentation:**</u>
 
