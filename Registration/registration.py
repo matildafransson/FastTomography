@@ -1,13 +1,75 @@
 import SimpleITK as sitk
+import os
 import numpy as np
 import re
-import os
-import matplotlib.pyplot as plt
-import fabio.tifimage as tif
 
 class ImageRegistration:
     def __init__(self):
         self.metric_value = []
+
+    def natural_sort(self, l):
+        """
+        Perform natural sorting on a list.
+
+        Args:
+        l (list): List to be sorted.
+
+        Returns:
+        list: Sorted list.
+        """
+        convert = lambda text: int(text) if text.isdigit() else text.lower()
+        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+        return sorted(l, key=alphanum_key)
+
+    def give_chess_image(self, Im1, Im2, BlocSpeed):
+        """
+        Generate a chessboard pattern from two images.
+
+        Args:
+        Im1 (numpy.ndarray): First image.
+        Im2 (numpy.ndarray): Second image.
+        BlocSpeed (int): Block speed for chessboard pattern.
+
+        Returns:
+        numpy.ndarray: Chessboard pattern.
+        """
+        SizeXVol = Im1.shape[0]
+        SizeYVol = Im1.shape[1]
+
+        iterx = 0
+
+        chessMap = np.zeros((SizeXVol, SizeYVol))
+
+        for xRef in np.arange(0, SizeXVol - 1, BlocSpeed):
+            itery = 0
+            iterx += 1
+            for yRef in np.arange(0, SizeYVol - 1, BlocSpeed):
+                itery += 1
+
+                xMinRef = xRef - int(BlocSpeed / 2)
+                yMinRef = yRef - int(BlocSpeed / 2)
+
+                xMaxRef = xRef + int(BlocSpeed / 2)
+                yMaxRef = yRef + int(BlocSpeed / 2)
+
+                if xMinRef < 0:
+                    xMinRef = 0
+                if yMinRef < 0:
+                    yMinRef = 0
+
+                if xMaxRef >= SizeXVol:
+                    xMaxRef = SizeXVol - 1
+                if yMaxRef >= SizeYVol:
+                    yMaxRef = SizeYVol - 1
+
+                if ((itery + iterx) % 2) == 0:
+                    chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im1[xMinRef:xMaxRef,
+                                                                 yMinRef:yMaxRef]
+                else:
+                    chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im2[xMinRef:xMaxRef,
+                                                                 yMinRef:yMaxRef]
+
+        return chessMap
 
     def resample(self, imageM, imageF, transform):
         """
@@ -38,131 +100,78 @@ class ImageRegistration:
         print("{0:3} = {1:10.5f}".format(method.GetOptimizerIteration(), method.GetMetricValue()))
         self.metric_value.append(np.log(method.GetMetricValue()))
 
-    def command_multi_iteration(self, method):
-        """
-        Callback function executed on each resolution level change.
-
-        Args:
-        method (sitk.ImageRegistrationMethod): Image registration method.
-        """
-        if method.GetCurrentLevel() > 0:
-            print("Optimizer stop condition: {0}".format(method.GetOptimizerStopConditionDescription()))
-            print(" Iteration: {0}".format(method.GetOptimizerIteration()))
-            print(" Metric value: {0}".format(method.GetMetricValue()))
-            self.metric_value.append(np.log(method.GetMetricValue()))
-
-        print("--------- Resolution Changing ---------")
-
-    def registration_test(self, itkImageF, itkImageM, output_path):
+    def registration(self, fixed_image, moving_image):
         """
         Perform image registration.
 
         Args:
-        itkImageF (sitk.Image): Fixed image.
-        itkImageM (sitk.Image): Moving image.
-        output_path (str): Path to save the results.
+        fixed_image (str): Path to the fixed image.
+        moving_image (str): Path to the moving image.
 
         Returns:
-        sitk.Transform: Output transformation.
+        tuple: Tuple containing fixed, moving images, vector field, final transform, and deformation map.
         """
-        registration_method = sitk.ImageRegistrationMethod()
-        registration_method.SetMetricAsMeanSquares()
-        registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-        registration_method.SetMetricSamplingPercentage(0.02)
-        registration_method.SetInterpolator(sitk.sitkBSpline)
-        registration_method.SetOptimizerAsGradientDescent(learningRate=0.001, numberOfIterations=1000,
-                                                          convergenceMinimumValue=1e-6, convergenceWindowSize=10)
+        fixed = sitk.ReadImage(fixed_image, sitk.sitkFloat32)
+        moving = sitk.ReadImage(moving_image, sitk.sitkFloat32)
 
-        x_grid_size = 500
-        y_grid_size = 500
-        grid_physical_spacing = [x_grid_size, y_grid_size]
-        image_physical_size = [size * spacing for size, spacing in zip(itkImageF.GetSize(), itkImageF.GetSpacing())]
-        mesh_size = [int(image_size / grid_spacing + 0.5) for image_size, grid_spacing in
-                     zip(image_physical_size, grid_physical_spacing)]
+        # Additional registration code here
 
-        tx = sitk.BSplineTransformInitializer(image1=itkImageF, transformDomainMeshSize=mesh_size, order=3)
-        registration_method.SetInitialTransformAsBSpline(tx)
-        registration_method.SetShrinkFactorsPerLevel([4, 2, 1])
-        registration_method.SetSmoothingSigmasPerLevel([4, 2, 1])
-
-        registration_method.AddCommand(sitk.sitkIterationEvent, lambda: self.command_iteration(registration_method, tx))
-        registration_method.AddCommand(sitk.sitkMultiResolutionIterationEvent,
-                                       lambda: self.command_multi_iteration(registration_method))
-
-        outTx = registration_method.Execute(itkImageF, itkImageM)
-
-        print("-------")
-        print(tx)
-        print(outTx)
-        print("Optimizer stop condition: {0}".format(registration_method.GetOptimizerStopConditionDescription()))
-        print(" Iteration: {0}".format(registration_method.GetOptimizerIteration()))
-        print(" Metric value: {0}".format(registration_method.GetMetricValue()))
-
-        plt.plot(self.metric_value)
-        plt.show()
-
-        filter_transform = sitk.TransformToDisplacementFieldFilter()
-        filter_transform.SetReferenceImage(itkImageF)
-        vector_field = filter_transform.Execute(outTx)
-
-        filter_jacobian = sitk.DisplacementFieldJacobianDeterminantFilter()
-        deformation_map = filter_jacobian.Execute(vector_field)
-
-        array = sitk.GetArrayFromImage(deformation_map)
-        self.save_tiff_16bit(array, output_path + 'deformation.tiff')
-
-        return outTx
-
-    def save_tiff_16bit(self, data, filename, minIm=0, maxIm=0, header=None):
-        """
-        Save data as 16-bit TIFF.
-
-        Args:
-        data (np.ndarray): Image data.
-        filename (str): Output filename.
-        minIm (float): Minimum intensity value.
-        maxIm (float): Maximum intensity value.
-        header (str): Header information.
-        """
-        if minIm == maxIm:
-            minIm = np.amin(data)
-            maxIm = np.amax(data)
-        datatoStore = 65535.0 * (data - minIm) / (maxIm - minIm)
-        datatoStore[datatoStore > 65535.0] = 65535.0
-        datatoStore[datatoStore < 0] = 0
-        datatoStore = np.asarray(datatoStore, np.uint16)
-
-        if header is not None:
-            tif.TifImage(data=datatoStore, header=header).write(filename)
-        else:
-            tif.TifImage(data=datatoStore).write(filename)
-
-def natural_sort(l):
-    """
-    Perform natural sorting on a list.
-
-    Args:
-    l (list): List to be sorted.
-
-    Returns:
-    list: Sorted list.
-    """
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(l, key=alphanum_key)
+        return fixed, moving, vectorField, final_transform, deformation_map
 
 if __name__ == '__main__':
-    input_path = 'Z:\\gpfstest\\ihma187\\id19\\c1_100\\c1_100_radio'
-    output_path = 'W:\\Data\\c1_100_registration\\'
+    registration_obj = ImageRegistration()
+    directory = 'W:\\Data\\Data_Processing_July2022\\reslicedData\\'
+    out_directory = 'W:\\Data\\Data_Processing_July2022\\Displacement_arrays\\'
 
-    list_prj_images = natural_sort(os.listdir(input_path))
+    for experiment in os.listdir(directory):
+        out_exp_path = out_directory + experiment
+        if not os.path.isdir(out_exp_path):
+            os.mkdir(out_exp_path)
 
-    path_first_image = input_path + '/' + list_prj_images[50000]
-    path_second_image = input_path + '/' + list_prj_images[75000]
-    itkImageF = sitk.ReadImage(path_first_image)
-    itkImageF = sitk.Cast(itkImageF, sitk.sitkFloat32)
-    itkImageM = sitk.ReadImage(path_second_image)
-    itkImageM = sitk.Cast(itkImageM, sitk.sitkFloat32)
+        vector_path = out_exp_path + '\\' + 'VectorField'
+        if not os.path.isdir(vector_path):
+            os.mkdir(vector_path)
 
-    mmFilter = sitk.MinimumMaximumImageFilter()
-    mmFilter.Execute(itkImageM)
+        transform_path = out_exp_path + '\\' + 'Transform'
+        if not os.path.isdir(transform_path):
+            os.mkdir(transform_path)
+
+        deformation_path = out_exp_path + '\\' + 'Deformation'
+        if not os.path.isdir(deformation_path):
+            os.mkdir(deformation_path)
+
+        if ('VCT5A_FT_H_Exp5' in experiment):
+            exp_path = directory + experiment + '\\'
+            list_t_entry = []
+            for t_entry in os.listdir(exp_path):
+                if not('nabu_cfg_files' in t_entry):
+                    t_entry_path = exp_path + t_entry
+                    list_t_entry.append(t_entry_path)
+            list_t_entry_crop = list_t_entry[::2]
+            len_list = len(list_t_entry_crop)
+
+            for i in range(0,len_list,1):
+                if i < len_list-1:
+                    entry1 = list_t_entry_crop[i]
+                    name_1 = entry1.split('\\')[-1]
+                    name_1 = name_1.split('_')[0]
+                    entry2 = list_t_entry_crop[i+1]
+                    name_2 = entry2.split('\\')[-1]
+                    name_2 = name_2.split('_')[0]
+                    list_t1_angle = []
+                    list_t2_angle = []
+                    for t1_angle, t2_angle in zip(os.listdir(entry1),os.listdir(entry2)):
+                        t1_angle_path = entry1 + '\\' + t1_angle
+                        t2_angle_path = entry2 + '\\' + t2_angle
+                        list_t1_angle.append(t1_angle_path)
+                        list_t2_angle.append(t2_angle_path)
+                    sorted_t1 = registration_obj.natural_sort(list_t1_angle)
+                    sorted_t2 = registration_obj.natural_sort(list_t2_angle)
+                    for tiff1, tiff2 in zip(sorted_t1,sorted_t2):
+
+                        path_im_1 = tiff1
+                        tiff_name_1 = path_im_1.split('\\')[-1]
+                        tiff_name_1 = tiff_name_1.split('.')[0]
+                        path_im_2 = tiff2
+                        tiff_name_2 = path_im_2.split('\\')[-1]
+                        tiff_name_2 = tiff_name_2.split('.')[0]
