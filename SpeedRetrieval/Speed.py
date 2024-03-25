@@ -259,6 +259,7 @@ class VectorAnalysis():
 
         plt.figure()
         c1 = plt.polar(np.radians(self.angles), self.mean_data[:,0]+self.std_data[:,0], color= viridis_colormap(0.6), alpha = 0.7, linestyle='dashed', label = 'Mean speed + STD [mm/s]')[0] #'#3f8502'
+        c1.set_theta_zero_location("W")
         x1 = c1.get_xdata()
         y1 = c1.get_ydata()
         c2 = plt.polar(np.radians(self.angles), self.mean_data[:,0] - self.std_data[:,0], color= viridis_colormap(0.9),alpha = 0.7, linestyle='dashed', label = 'Mean speed - STD [mm/s]')[0] #'#00735d'

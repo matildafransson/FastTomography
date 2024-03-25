@@ -5,228 +5,153 @@ import os
 import matplotlib.pyplot as plt
 import fabio.tifimage as tif
 
+class ImageRegistration:
+    def __init__(self):
+        self.metric_value = []
 
-def giveChessImage(Im1, Im2, BlocSpeed):
-    SizeXVol = Im1.shape[0]
-    SizeYVol = Im1.shape[1]
+    def resample(self, imageM, imageF, transform):
+        """
+        Resample the moving image using the given transformation.
 
-    iterx = 0
+        Args:
+        imageM (sitk.Image): Moving image.
+        imageF (sitk.Image): Fixed image.
+        transform (sitk.Transform): Transformation to be applied.
 
-    chessMap = np.zeros((SizeXVol, SizeYVol))
+        Returns:
+        sitk.Image: Resampled image.
+        """
+        interpolator = sitk.sitkCosineWindowedSinc
+        return sitk.Resample(imageM, imageF, transform, interpolator, 0.0, imageM.GetPixelID())
 
-    for xRef in np.arange(0, SizeXVol - 1, BlocSpeed):
-        itery = 0
-        iterx += 1
-        for yRef in np.arange(0, SizeYVol - 1, BlocSpeed):
-            itery += 1
+    def command_iteration(self, method, bspline_transform):
+        """
+        Callback function executed on each iteration of the optimizer.
 
-            xMinRef = xRef - int(BlocSpeed / 2)
-            yMinRef = yRef - int(BlocSpeed / 2)
+        Args:
+        method (sitk.ImageRegistrationMethod): Image registration method.
+        bspline_transform (sitk.BSplineTransform): BSpline transformation.
+        """
+        if method.GetOptimizerIteration() == 0:
+            print(bspline_transform)
 
-            xMaxRef = xRef + int(BlocSpeed / 2)
-            yMaxRef = yRef + int(BlocSpeed / 2)
+        print("{0:3} = {1:10.5f}".format(method.GetOptimizerIteration(), method.GetMetricValue()))
+        self.metric_value.append(np.log(method.GetMetricValue()))
 
-            if xMinRef < 0:
-                xMinRef = 0
-            if yMinRef < 0:
-                yMinRef = 0
+    def command_multi_iteration(self, method):
+        """
+        Callback function executed on each resolution level change.
 
-            if xMaxRef >= SizeXVol:
-                xMaxRef = SizeXVol - 1
-            if yMaxRef >= SizeYVol:
-                yMaxRef = SizeYVol - 1
+        Args:
+        method (sitk.ImageRegistrationMethod): Image registration method.
+        """
+        if method.GetCurrentLevel() > 0:
+            print("Optimizer stop condition: {0}".format(method.GetOptimizerStopConditionDescription()))
+            print(" Iteration: {0}".format(method.GetOptimizerIteration()))
+            print(" Metric value: {0}".format(method.GetMetricValue()))
+            self.metric_value.append(np.log(method.GetMetricValue()))
 
-            if ((itery + iterx) % 2) == 0:
-                chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im1[xMinRef:xMaxRef,
-                                                             yMinRef:yMaxRef]
-            else:
-                chessMap[xMinRef:xMaxRef, yMinRef:yMaxRef] = Im2[xMinRef:xMaxRef,
-                                                             yMinRef:yMaxRef]
+        print("--------- Resolution Changing ---------")
 
+    def registration_test(self, itkImageF, itkImageM, output_path):
+        """
+        Perform image registration.
 
-    return chessMap
+        Args:
+        itkImageF (sitk.Image): Fixed image.
+        itkImageM (sitk.Image): Moving image.
+        output_path (str): Path to save the results.
 
+        Returns:
+        sitk.Transform: Output transformation.
+        """
+        registration_method = sitk.ImageRegistrationMethod()
+        registration_method.SetMetricAsMeanSquares()
+        registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
+        registration_method.SetMetricSamplingPercentage(0.02)
+        registration_method.SetInterpolator(sitk.sitkBSpline)
+        registration_method.SetOptimizerAsGradientDescent(learningRate=0.001, numberOfIterations=1000,
+                                                          convergenceMinimumValue=1e-6, convergenceWindowSize=10)
 
-def resample(imageM, imageF, transform):
-    # Output image Origin, Spacing, Size, Direction are taken from the reference
-    # image in this call to Resample
-    interpolator = sitk.sitkCosineWindowedSinc
+        x_grid_size = 500
+        y_grid_size = 500
+        grid_physical_spacing = [x_grid_size, y_grid_size]
+        image_physical_size = [size * spacing for size, spacing in zip(itkImageF.GetSize(), itkImageF.GetSpacing())]
+        mesh_size = [int(image_size / grid_spacing + 0.5) for image_size, grid_spacing in
+                     zip(image_physical_size, grid_physical_spacing)]
 
+        tx = sitk.BSplineTransformInitializer(image1=itkImageF, transformDomainMeshSize=mesh_size, order=3)
+        registration_method.SetInitialTransformAsBSpline(tx)
+        registration_method.SetShrinkFactorsPerLevel([4, 2, 1])
+        registration_method.SetSmoothingSigmasPerLevel([4, 2, 1])
 
-    return  sitk.Resample(imageM, imageF, transform, interpolator, 0.0,imageM.GetPixelID())
+        registration_method.AddCommand(sitk.sitkIterationEvent, lambda: self.command_iteration(registration_method, tx))
+        registration_method.AddCommand(sitk.sitkMultiResolutionIterationEvent,
+                                       lambda: self.command_multi_iteration(registration_method))
 
+        outTx = registration_method.Execute(itkImageF, itkImageM)
 
-def myshownp(img, title=None, margin=0.05, dpi=80):
-    nda = img
-    spacing = [1,1]
+        print("-------")
+        print(tx)
+        print(outTx)
+        print("Optimizer stop condition: {0}".format(registration_method.GetOptimizerStopConditionDescription()))
+        print(" Iteration: {0}".format(registration_method.GetOptimizerIteration()))
+        print(" Metric value: {0}".format(registration_method.GetMetricValue()))
 
-    ysize = nda.shape[0]
-    xsize = nda.shape[1]
+        plt.plot(self.metric_value)
+        plt.show()
 
-    figsize = (1 + margin) * ysize / dpi, (1 + margin) * xsize / dpi
+        filter_transform = sitk.TransformToDisplacementFieldFilter()
+        filter_transform.SetReferenceImage(itkImageF)
+        vector_field = filter_transform.Execute(outTx)
 
-    fig = plt.figure(title, figsize=figsize, dpi=dpi)
-    ax = fig.add_axes([margin, margin, 1 - 2 * margin, 1 - 2 * margin])
+        filter_jacobian = sitk.DisplacementFieldJacobianDeterminantFilter()
+        deformation_map = filter_jacobian.Execute(vector_field)
 
-    extent = (0, xsize * spacing[1], 0, ysize * spacing[0])
+        array = sitk.GetArrayFromImage(deformation_map)
+        self.save_tiff_16bit(array, output_path + 'deformation.tiff')
 
-    t = ax.imshow(nda,
-                  extent=extent,
-                  interpolation='hamming',
-                  cmap='gray',
-                  origin='lower')
+        return outTx
 
-    if (title):
-        plt.title(title)
+    def save_tiff_16bit(self, data, filename, minIm=0, maxIm=0, header=None):
+        """
+        Save data as 16-bit TIFF.
 
-    plt.show()
+        Args:
+        data (np.ndarray): Image data.
+        filename (str): Output filename.
+        minIm (float): Minimum intensity value.
+        maxIm (float): Maximum intensity value.
+        header (str): Header information.
+        """
+        if minIm == maxIm:
+            minIm = np.amin(data)
+            maxIm = np.amax(data)
+        datatoStore = 65535.0 * (data - minIm) / (maxIm - minIm)
+        datatoStore[datatoStore > 65535.0] = 65535.0
+        datatoStore[datatoStore < 0] = 0
+        datatoStore = np.asarray(datatoStore, np.uint16)
 
-def myshowitk(img, title=None, margin=0.05, dpi=80):
-    nda = sitk.GetArrayViewFromImage(img)
-    spacing = img.GetSpacing()
-
-    ysize = nda.shape[0]
-    xsize = nda.shape[1]
-
-    figsize = (1 + margin) * ysize / dpi, (1 + margin) * xsize / dpi
-
-    fig = plt.figure(title, figsize=figsize, dpi=dpi)
-    ax = fig.add_axes([margin, margin, 1 - 2 * margin, 1 - 2 * margin])
-
-    extent = (0, xsize * spacing[1], 0, ysize * spacing[0])
-
-    t = ax.imshow(nda,
-                  extent=extent,
-                  interpolation='hamming',
-                  cmap='gray',
-                  origin='lower')
-
-    if (title):
-        plt.title(title)
-
-    plt.show()
-
-
-def saveTiff16bit(data, filename, minIm=0, maxIm=0, header=None):
-    if (minIm == maxIm):
-        minIm = np.amin(data)
-        maxIm = np.amax(data)
-    datatoStore = 65535.0 * (data - minIm) / (maxIm - minIm)
-    datatoStore[datatoStore > 65535.0] = 65535.0
-    datatoStore[datatoStore < 0] = 0
-
-    datatoStore = np.asarray(datatoStore, np.uint16)
-
-    if (header != None):
-        tif.TifImage(data=datatoStore, header=header).write(filename)
-    else:
-        tif.TifImage(data=datatoStore).write(filename)
-
+        if header is not None:
+            tif.TifImage(data=datatoStore, header=header).write(filename)
+        else:
+            tif.TifImage(data=datatoStore).write(filename)
 
 def natural_sort(l):
+    """
+    Perform natural sorting on a list.
+
+    Args:
+    l (list): List to be sorted.
+
+    Returns:
+    list: Sorted list.
+    """
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
 
-
-metric_value = []
-
-
-def command_iteration(method, bspline_transform):
-    if method.GetOptimizerIteration() == 0:
-        # The BSpline is resized before the first optimizer
-        # iteration is completed per level. Print the transform object
-        # to show the adapted BSpline transform.
-        print(bspline_transform)
-
-    print("{0:3} = {1:10.5f}".format(method.GetOptimizerIteration(),
-                                     method.GetMetricValue()))
-    metric_value.append(np.log(method.GetMetricValue()))
-
-
-def command_multi_iteration(method):
-    # The sitkMultiResolutionIterationEvent occurs before the
-    # resolution of the transform. This event is used here to print
-    # the status of the optimizer from the previous registration level.
-    if method.GetCurrentLevel() > 0:
-        print("Optimizer stop condition: {0}".format(method.GetOptimizerStopConditionDescription()))
-        print(" Iteration: {0}".format(method.GetOptimizerIteration()))
-        print(" Metric value: {0}".format(method.GetMetricValue()))
-        metric_value.append(np.log(method.GetMetricValue()))
-
-    print("--------- Resolution Changing ---------")
-
-
-def registration_test(itkImageF, itkImageM, output_path):
-    registration_method = sitk.ImageRegistrationMethod()
-
-    registration_method.SetMetricAsMeanSquares()
-    registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-    registration_method.SetMetricSamplingPercentage(0.02)
-
-    registration_method.SetInterpolator(sitk.sitkBSpline)
-
-    registration_method.SetOptimizerAsGradientDescent(learningRate=0.001, numberOfIterations=1000,
-                                                      convergenceMinimumValue=1e-6, convergenceWindowSize=10)
-
-
-    x_grid_size = 500
-    y_grid_size = 500
-
-
-    grid_physical_spacing = [x_grid_size, y_grid_size]
-    image_physical_size = [size * spacing for size, spacing in zip(itkImageF.GetSize(), itkImageF.GetSpacing())]
-
-
-    mesh_size = [int(image_size / grid_spacing + 0.5) for image_size, grid_spacing in
-                 zip(image_physical_size, grid_physical_spacing)]
-
-    tx = sitk.BSplineTransformInitializer(image1=itkImageF, transformDomainMeshSize=mesh_size,order=3)
-
-    registration_method.SetInitialTransformAsBSpline(tx)
-
-    registration_method.SetShrinkFactorsPerLevel([4, 2, 1])
-    registration_method.SetSmoothingSigmasPerLevel([4, 2, 1])
-
-    registration_method.AddCommand(sitk.sitkIterationEvent, lambda: command_iteration(registration_method, tx))
-    registration_method.AddCommand(sitk.sitkMultiResolutionIterationEvent,
-                                   lambda: command_multi_iteration(registration_method))
-
-    outTx = registration_method.Execute(itkImageF, itkImageM)
-
-    print("-------")
-    print(tx)
-    print(outTx)
-    print("Optimizer stop condition: {0}".format(registration_method.GetOptimizerStopConditionDescription()))
-    print(" Iteration: {0}".format(registration_method.GetOptimizerIteration()))
-    print(" Metric value: {0}".format(registration_method.GetMetricValue()))
-
-    plt.plot(metric_value)
-    plt.show()
-
-    FilterTransform = sitk.TransformToDisplacementFieldFilter()
-    FilterTransform.SetReferenceImage(itkImageF)
-    vectorField = FilterTransform.Execute(outTx)
-
-    filterJacob = sitk.DisplacementFieldJacobianDeterminantFilter()
-    deformation_map = filterJacob.Execute(vectorField)
-    # deformation_map = sitk.Cast(deformation_map, sitk.sitkFloat32)
-    print(deformation_map)
-    array = sitk.GetArrayFromImage(deformation_map)
-    saveTiff16bit(array, output_path + 'deformation.tiff')
-    return outTx
-
-    '''
-    #sitk.Show(deformation_map, title="deformation",debugOn=True)
-    writer = sitk.ImageFileWriter()
-    writer.SetFileName(output_path+'deformation.tiff')
-    writer.Execute(deformation_map)
-    '''
-
-
 if __name__ == '__main__':
-    # input_path = '/data/id19/gpfstest/ihma187/id19/c1_100/c1_100_radio'
-    # output_path = '/data/projects/whaitiri/Data/c1_100_registration/'
     input_path = 'Z:\\gpfstest\\ihma187\\id19\\c1_100\\c1_100_radio'
     output_path = 'W:\\Data\\c1_100_registration\\'
 
@@ -241,13 +166,3 @@ if __name__ == '__main__':
 
     mmFilter = sitk.MinimumMaximumImageFilter()
     mmFilter.Execute(itkImageM)
-    print(mmFilter.GetMinimum(), mmFilter.GetMaximum())
-    # sitk.Show(itkImageM, title="cthead1",debugOn=True)
-
-
-    outTx = registration_test(itkImageM, itkImageF, output_path)
-
-    resampledM = resample(itkImageM, itkImageF, outTx)
-    myshowitk(resampledM, 'Resampled Translation')
-    chess1 = giveChessImage(sitk.GetArrayFromImage(itkImageF), sitk.GetArrayFromImage(resampledM), 50)
-    myshownp(chess1)

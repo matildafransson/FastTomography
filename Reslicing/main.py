@@ -11,7 +11,7 @@ class VolumeReslicer:
     def __init__(self):
         pass
 
-    def move_volume_to_center(volume):
+    def move_volume_to_center(self, volume):
         '''
         Args:
             volume: .npy tomographic volume
@@ -41,7 +41,7 @@ class VolumeReslicer:
 
         return moved_volume
 
-    def saveTiff16bit(data, filename, minIm=0, maxIm=0, header=None):
+    def saveTiff16bit(self,data, filename, minIm=0, maxIm=0, header=None):
         '''
         Args:
             data: np.array data to be saved
@@ -64,7 +64,7 @@ class VolumeReslicer:
         else:
             tif.TifImage(data=datatoStore).write(filename)
 
-    def main(self):
+    def run(self):
         '''
         Function to reslice the tomographic volumes into 2D projections and save each projection as a tiff image.
         '''
@@ -73,7 +73,7 @@ class VolumeReslicer:
 
         # List of paths to input volumes and corresponding starting time numbers
         path_volume_list = ['INSERT_VOLUME_PATHS_HERE']  # Change this to the desired input volume paths
-        list_start_t_number = [START_NUMBERS]  # Change this to the desired starting time numbers related to each path above
+        list_start_t_number = ['START_NUMBERS']  # Change this to the desired starting time numbers related to each path above
 
         # Iterate over each input volume path and its starting time number
         for path_volume, start_t_number in zip(path_volume_list, list_start_t_number):
@@ -124,4 +124,4 @@ class VolumeReslicer:
 
 if __name__ == "__main__":
     image_processor = VolumeReslicer()
-    image_processor.main()
+    image_processor.run()
